@@ -1,9 +1,11 @@
 const express = require("express");
 const app = express();
 const { TwitterApi } = require("twitter-api-v2");
+const cors = require("cors");
+
+app.use(cors()); //TODO: Configure proper CORS origins and requests
 
 const dotenv = require("dotenv");
-
 dotenv.config();
 
 app.get("/", (req, res) => {
@@ -11,23 +13,30 @@ app.get("/", (req, res) => {
 });
 
 app.get("/authLink", async (req, res) => {
-  let link = null;
-  let client = await new TwitterApi({
-    appKey: process.env.API_KEY,
-    appSecret: process.env.API_KEY_SECRET,
-  });
+  try {
+    let client = await new TwitterApi({
+      appKey: process.env.API_KEY,
+      appSecret: process.env.API_KEY_SECRET,
+    });
 
-  link = await client.generateAuthLink(process.env.CALLBACK_URL, {
-    scope: ["tweet.read", "tweet.write", "users.read", "offline.access"],
-  });
+    const link = await client.generateAuthLink(process.env.CALLBACK_URL, {
+      scope: ["tweet.read", "tweet.write", "offline.access"],
+    });
 
-  console.log(link);
-
-  link ? res.send(link.url) : res.send("Link not ready");
+    if (link) {
+      res.json({ link: link.url });
+    } else {
+      res.status(500).send("Link generation failed");
+    }
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 app.get("/callback_url", (req, res) => {
-  res.send("callback PAGE");
+  const { oauth_token, oauth_verifier } = req.query;
+  //TODO: store in db
+  res.send(`Token: ${oauth_token}, Verifier: ${oauth_verifier}`);
 });
 
 app.listen("3022", () => {
