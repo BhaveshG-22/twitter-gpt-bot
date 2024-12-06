@@ -6,24 +6,28 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-async function initializeTwitter() {
-  const client = new TwitterApi({
-    appKey: process.env.API_KEY,
-    appSecret: process.env.API_KEY_SECRET,
-  });
-
-  const link = await client.generateAuthLink(process.env.CALLBACK_URL);
-  console.log(link);
-}
-
-initializeTwitter();
-
 app.get("/", (req, res) => {
   res.send("HOME PAGE");
 });
 
 app.get("/authLink", async (req, res) => {
-  res.send("authLink PAGE");
+  let link = null;
+  let client = await new TwitterApi({
+    appKey: process.env.API_KEY,
+    appSecret: process.env.API_KEY_SECRET,
+  });
+
+  link = await client.generateAuthLink(process.env.CALLBACK_URL, {
+    scope: ["tweet.read", "tweet.write", "users.read", "offline.access"],
+  });
+
+  console.log(link);
+
+  link ? res.send(link.url) : res.send("Link not ready");
+});
+
+app.get("/callback_url", (req, res) => {
+  res.send("callback PAGE");
 });
 
 app.listen("3022", () => {
