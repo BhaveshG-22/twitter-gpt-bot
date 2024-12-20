@@ -23,7 +23,7 @@ let loggedClient;
 app.get("/", async (req, res) => {
   try {
     const { url, state, codeVerifier } = twitterClient.generateOAuth2AuthLink(
-      "http://127.0.0.1:3030/callback",
+      process.env.CALLBACK_URL,
       {
         scope: ["tweet.read", "tweet.write", "users.read", "offline.access"],
       }
@@ -72,7 +72,7 @@ app.get("/callback", async (req, res) => {
       tokens = await twitterClient.loginWithOAuth2({
         code,
         codeVerifier: exists.codeVerifier,
-        redirectUri: "http://127.0.0.1:3030/callback",
+        redirectUri: process.env.CALLBACK_URL,
       });
     } catch (loginError) {
       console.error("Error during Twitter login:", loginError.message);
@@ -116,10 +116,6 @@ app.get("/callback", async (req, res) => {
       state: objID.state,
       refreshToken: objID.refreshToken,
     });
-
-    // res.redirect(
-    //   `/tweet?state=${objID.state}&refreshToken=${objID.refreshToken}`
-    // );
 
     res.redirect(`/tweet?token=${token}`);
   } catch (error) {
